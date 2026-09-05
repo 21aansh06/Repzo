@@ -1,6 +1,6 @@
 import {inngest} from "./client.js"
-import { helloWorld } from "./functions/test.js"
+import { indexRepo } from "./functions/indexRepo.js"
 
 export {inngest}
 
-export const functions = [helloWorld]
+export const functions = [indexRepo]

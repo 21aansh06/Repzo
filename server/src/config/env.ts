@@ -6,6 +6,7 @@ const envSchema = z.object({
     PORT: z.coerce.number().int().positive().default(5000),
 
     OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
+    GITHUB_TOKEN: z.string().min(1, "GITHUB_TOKEN is required"),
 
     PINECONE_API_KEY: z.string().min(1, "PINECONE_API_KEY is required"),
 
