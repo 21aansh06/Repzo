@@ -1,5 +1,6 @@
 import { chunkFiles } from "../../services/chunker.js";
 import { fetchRepoFiles } from "../../services/github.js";
+import { saveChunks } from "../../services/vectorStore.js";
 import { inngest } from "../index.js"
 
 
@@ -11,18 +12,23 @@ export const indexRepo = inngest.createFunction(
         const repoName = repo.replace(/\.git$/, "");
         const repoKey = `${owner}/${repoName}`;
 
-        const files = await step.run("fetch-files", async()=>{
+        const files = await step.run("fetch-files", async () => {
             return fetchRepoFiles(githubToken, owner, repoName)
         })
-        const documents = await step.run("chunk-files", async()=>{
+        const documents = await step.run("chunk-files", async () => {
             return chunkFiles(files, repoKey)
         })
-        
+
+        const saveResult = await step.run("save-to-pinecone", async () => {
+            return saveChunks(repoKey, documents)
+        })
+
 
         return {
-            repo:repoKey,
+            repo: repoKey,
             fileCount: files.length,
-            chunkCount: documents.length
+            chunkCount: documents.length,
+            saved: saveResult.saved
         }
     }
 )
