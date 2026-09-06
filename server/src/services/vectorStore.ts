@@ -10,7 +10,6 @@ const embeddings = new OpenAIEmbeddings({
 
 
 const UPSERT_BATCH_SIZE = 100;
-const DEFAULT_TOP_K = 5;
 
 interface ChunkMetadata {
   path?: string;
@@ -57,35 +56,34 @@ function buildRecordId(
     .digest("hex");
 }
 
-// function toSearchDocument(
-//   match: {
-//     score?: number;
-//     metadata?: Record<string, unknown>;
-//   },
-// ): SearchDocument {
-//   const metadata = match.metadata ?? {};
+function toSearchDocument(
+  match: {
+    score?: number;
+    metadata?: Record<string, unknown>;
+  },
+): SearchDocument {
+  const metadata = match.metadata ?? {};
 
-//   const text =
-//     typeof metadata.text === "string"
-//       ? metadata.text
-//       : "";
+  const text =
+    typeof metadata.text === "string"
+      ? metadata.text
+      : "";
 
-//   return {
-//     pageContent: text,
-//     metadata: {
-//       path:
-//         typeof metadata.path === "string"
-//           ? metadata.path
-//           : undefined,
-
-//       repo:
-//         typeof metadata.repo === "string"
-//           ? metadata.repo
-//           : undefined,
-//     },
-//     score: match.score,
-//   };
-// }
+  return {
+    pageContent: text,
+    metadata: {
+      ...(typeof metadata.path === "string"
+        ? { path: metadata.path }
+        : {}),
+      ...(typeof metadata.repo === "string"
+        ? { repo: metadata.repo }
+        : {}),
+    },
+    ...(match.score !== undefined
+      ? { score: match.score }
+      : {}),
+  };
+}
 
 export async function saveChunks(
   repo: string,
@@ -153,34 +151,34 @@ export async function saveChunks(
   };
 }
 
-// export async function search(
-//   repo: string,
-//   question: string,
-//   topK: number = DEFAULT_TOP_K,
-// ): Promise<SearchDocument[]> {
-//   if (!question.trim()) {
-//     return [];
-//   }
+export async function search(
+  repo: string,
+  question: string,
+  topK: number,
+): Promise<SearchDocument[]> {
+  if (!question.trim()) {
+    return [];
+  }
 
-//   if (topK <= 0) {
-//     throw new Error("topK must be greater than 0");
-//   }
+  if (topK <= 0) {
+    throw new Error("topK must be greater than 0");
+  }
 
-//   const namespace = repoToNamespace(repo);
-//   const index = getIndex(namespace);
+  const namespace = repoToNamespace(repo);
+  const index = getIndex(namespace);
 
-//   const vector = await embeddings.embedQuery(question);
+  const vector = await embeddings.embedQuery(question);
 
-//   const response = await index.query({
-//     vector,
-//     topK,
-//     includeMetadata: true,
-//   });
+  const response = await index.query({
+    vector,
+    topK,
+    includeMetadata: true,
+  });
 
-//   return (response.matches ?? [])
-//     .map(toSearchDocument)
-//     .filter(
-//       (document) =>
-//         document.pageContent.trim().length > 0,
-//     );
-// }
+  return (response.matches ?? [])
+    .map(toSearchDocument)
+    .filter(
+      (document) =>
+        document.pageContent.trim().length > 0,
+    );
+}
